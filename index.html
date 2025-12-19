@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゼロから学ぶコンテナ開発ロードマップ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">
+                📦 コンテナ開発ロードマップ
+            </h1>
+            <span class="text-sm bg-blue-100 text-blue-800 py-1 px-3 rounded-full font-medium hidden sm:inline-block">
+                Level: 初心者 → フルスタック
+            </span>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12 w-full">
+
+        <!-- Intro & Goal Section -->
+        <section class="bg-white rounded-xl shadow-lg p-6 md:p-8 border-l-4 border-blue-500">
+            <h2 class="text-2xl font-bold mb-4 text-slate-800">プロジェクトのゴール</h2>
+            <p class="text-lg text-slate-600 mb-6 leading-relaxed">
+                このロードマップの最終目標は、GitHub上で<span class="font-bold text-blue-600">「Dockerを使って開発環境がすぐに立ち上がり、GitHub Actionsで自動的にテスト・ビルドされるWebアプリ」</span>を公開することです。
+            </p>
+            <div class="grid md:grid-cols-2 gap-6 bg-slate-50 p-6 rounded-lg">
+                <div>
+                    <h3 class="font-bold text-slate-700 mb-2">🎯 ターゲット読者</h3>
+                    <ul class="space-y-2 text-slate-600">
+                        <li class="flex items-start">
+                            <span class="mr-2">🤔</span> 「コンテナ？ 船の？」というレベルの方
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-2">😱</span> 「自分のPCでは動いたのに、本番サーバーで動かない」経験がある方
+                        </li>
+                    </ul>
+                </div>
+                <div class="flex items-center justify-center border-t md:border-t-0 md:border-l border-slate-200 pt-4 md:pt-0 md:pl-6">
+                    <p class="text-center font-medium text-slate-500 italic">
+                        「動かない」をなくす、魔法の箱（コンテナ）の世界へようこそ
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Concept Visualizer: Before vs After -->
+        <section id="concept-section">
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-slate-800">コンテナとは？（イメージ比較）</h2>
+                <p class="text-slate-600 mt-2">
+                    技術用語を使わずにイメージしてみましょう。下のボタンで「従来」と「コンテナ」の違いを切り替えてみてください。
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="flex border-b">
+                    <button id="btn-before" class="flex-1 py-4 text-center font-bold bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors" onclick="switchConcept('before')">
+                        🚛 これまで（コンテナなし）
+                    </button>
+                    <button id="btn-after" class="flex-1 py-4 text-center font-bold bg-blue-600 text-white transition-colors shadow-inner" onclick="switchConcept('after')">
+                        🚢 これから（コンテナあり）
+                    </button>
+                </div>
+
+                <div class="p-8 min-h-[300px] flex flex-col md:flex-row items-center justify-center gap-8 transition-all duration-500" id="concept-display">
+                    <!-- Content injected via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Interactive Roadmap -->
+        <section>
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-slate-800">実践ステップ（全5段階）</h2>
+                <p class="text-slate-600 mt-2">
+                    段階的にコンテナ技術を学び、最終的に自動化された開発フローを構築します。各ステップをクリックして詳細を確認してください。
+                </p>
+            </div>
+
+            <div class="grid lg:grid-cols-12 gap-6">
+                <!-- Navigation (Left/Top) -->
+                <div class="lg:col-span-3 flex flex-row lg:flex-col gap-2 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0" id="step-nav">
+                    <!-- Buttons injected via JS -->
+                </div>
+
+                <!-- Main Content (Center) -->
+                <div class="lg:col-span-6 bg-white rounded-xl shadow-lg p-6 border border-slate-100 flex flex-col justify-between">
+                    <div id="step-content">
+                        <!-- Step Content injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Stats/Gamification (Right) -->
+                <div class="lg:col-span-3 bg-white rounded-xl shadow-lg p-4 flex flex-col">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4 text-center">習得スキルレベル</h3>
+                    <div class="chart-container flex-grow">
+                        <canvas id="skillChart"></canvas>
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-50 rounded text-xs text-blue-800 text-center">
+                        ステップを進めて、フルスタックエンジニア視点を手に入れよう！
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- App Idea Section -->
+        <section class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+            <h2 class="text-2xl font-bold mb-6 text-slate-800">おすすめの題材アプリ案：『今日の一言掲示板』</h2>
+            <p class="text-slate-600 mb-8">
+                複雑な機能は不要です。コンテナの連携（アプリ ✕ DB）を確認できる最小構成が学習に最適です。
+            </p>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Frontend/Backend Card -->
+                <div class="bg-indigo-50 border border-indigo-100 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="text-3xl mb-4">🖥️</div>
+                    <h3 class="font-bold text-indigo-900 mb-2">Frontend / Backend</h3>
+                    <p class="text-sm text-indigo-700 mb-4">Python (Flask) または Node.js (Express)</p>
+                    <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                        <li>テキスト入力と投稿機能</li>
+                        <li>一覧表示機能</li>
+                    </ul>
+                </div>
+
+                <!-- Database Card -->
+                <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="text-3xl mb-4">💾</div>
+                    <h3 class="font-bold text-emerald-900 mb-2">Database</h3>
+                    <p class="text-sm text-emerald-700 mb-4">PostgreSQL または Redis</p>
+                    <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                        <li>データの永続化</li>
+                        <li>ブラウザを閉じても消えない</li>
+                    </ul>
+                </div>
+
+                <!-- Container Card -->
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-6 hover:shadow-md transition-shadow">
+                    <div class="text-3xl mb-4">🐳</div>
+                    <h3 class="font-bold text-blue-900 mb-2">Infrastructure</h3>
+                    <p class="text-sm text-blue-700 mb-4">Docker & Docker Compose</p>
+                    <ul class="text-sm text-slate-600 space-y-1 list-disc list-inside">
+                        <li>アプリとDBの連携</li>
+                        <li>一発起動の仕組み</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search Keywords -->
+        <section class="bg-slate-800 rounded-xl shadow-lg p-6 md:p-8 text-white">
+            <h2 class="text-xl font-bold mb-4">🔍 学習リソース検索キーワード</h2>
+            <p class="text-slate-300 mb-6 text-sm">
+                躓いたときは、以下のキーワードを組み合わせて検索してみてください。
+            </p>
+            <div class="flex flex-wrap gap-3">
+                <span class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600 transition-colors cursor-pointer select-all">Docker 入門 ハンズオン</span>
+                <span class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600 transition-colors cursor-pointer select-all">Docker Compose Python 構築</span>
+                <span class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600 transition-colors cursor-pointer select-all">VS Code Dev Containers 使い方</span>
+                <span class="px-4 py-2 bg-slate-700 rounded-lg text-sm hover:bg-slate-600 transition-colors cursor-pointer select-all">GitHub Actions Docker ビルド</span>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="text-center text-slate-500 text-sm pb-8">
+            <p>最初は <code>Dockerfile</code> の書き方で躓くかもしれませんが、それは「Linuxサーバーの構築手順」を学んでいるのと同じ価値があります。</p>
+            <p class="mt-2">焦らず、Step 1から始めてみましょう！</p>
+        </footer>
+
+    </main>
+    <script src="app.js"></script>
+</body>
+</html>
