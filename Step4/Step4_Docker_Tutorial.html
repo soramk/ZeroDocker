@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 4 詳細ガイド: Dev Containers (開発環境のコンテナ化)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: "Dev Environment". Background: Warm Neutral. Accents: VS Code Blue (#007acc) & Remote Green (#16825d). -->
+    <!-- Application Structure Plan: Consistent with previous steps.
+         - Key Change: Introduction of ".devcontainer" concept.
+         - Key Change: Simulation of VS Code UI "Reopen in Container".
+         - Key Change: Visualization of Host vs Container separation.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        .typing-effect {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid transparent;
+            animation: typing 2s steps(40, end);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+            opacity: 0;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        .step-btn.active {
+            background-color: #eff6ff; /* Blue tint for VS Code */
+            border-left: 4px solid #007acc;
+            color: #0c4a6e;
+        }
+        .step-btn {
+            border-left: 4px solid transparent;
+        }
+        /* VS Code Simulator Styles */
+        .vscode-statusbar {
+            background-color: #007acc;
+            color: white;
+        }
+        .remote-indicator {
+            background-color: #16825d; /* Remote Green */
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 z-10 flex-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">💻</span>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 leading-none">Step 4: 開発環境ごとコンテナにする</h1>
+                    <p class="text-xs text-slate-500 mt-1">Dev Containers & VS Code 連携ハンズオン</p>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <div class="flex items-center space-x-2 text-sm text-slate-500">
+                    <span>Progress:</span>
+                    <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-text">0%</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-grow flex flex-col md:flex-row overflow-hidden max-w-7xl mx-auto w-full">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="w-full md:w-64 bg-white border-r border-slate-200 flex-none overflow-y-auto z-0">
+            <div class="p-4 space-y-1">
+                <button onclick="loadStep(0)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-0">
+                    <span>1. コンセプト</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Intro</span>
+                </button>
+                <button onclick="loadStep(1)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-1">
+                    <span>2. 設定作成</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Config</span>
+                </button>
+                <button onclick="loadStep(2)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-2">
+                    <span>3. コンテナ起動</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Open</span>
+                </button>
+                <button onclick="loadStep(3)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-3">
+                    <span>4. 開発体験</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Dev</span>
+                </button>
+                <button onclick="loadStep(4)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-4">
+                    <span>5. チーム共有</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Team</span>
+                </button>
+                <button onclick="loadStep(5)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-5">
+                    <span>6. 完了</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Done</span>
+                </button>
+            </div>
+            
+            <div class="p-4 mt-4 border-t border-slate-100">
+                <div class="bg-blue-50 p-3 rounded text-sm text-blue-800 border border-blue-200">
+                    <p class="font-bold mb-1">>< Dev Containers</p>
+                    <p id="step-hint">VS Codeの拡張機能を使って、コンテナの中で快適にコーディングします。</p>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="flex-grow bg-slate-50 overflow-y-auto p-4 md:p-8 relative" id="main-content">
+            <!-- Dynamic Content injected here -->
+        </main>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- DATA & CONTENT ---
+        const tutorialSteps = [
+            {
+                id: "concept",
+                title: "1. 環境構築の苦しみからの解放",
+                content: `
+                    <div class="max-w-3xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4">「私のPCでは動くのに...」</h2>
+                            <p class="text-lg text-slate-600 mb-6">
+                                アプリはコンテナ化できましたが、それを書くための<strong>「エディタ」や「ツール」</strong>（Pythonのバージョン、Gitの設定、Linterなど）は、まだ個人のPC環境に依存していませんか？<br>
+                                Step 4では、<strong>開発環境そのものをコンテナ化</strong>します。
+                            </p>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center opacity-70">
+                                <div class="text-4xl mb-4">😫</div>
+                                <h3 class="font-bold text-slate-700 mb-2">これまでの開発</h3>
+                                <p class="text-sm text-slate-500 text-left px-4">
+                                    ・新人「Pythonのバージョンが合いません」<br>
+                                    ・先輩「あー、PATH通してない？」<br>
+                                    ・<span class="font-bold text-red-500">環境構築に3日かかる</span>
+                                </p>
+                            </div>
+                            <div class="bg-blue-50 p-6 rounded-xl shadow-md border border-blue-200 text-center relative">
+                                <div class="absolute -top-3 -right-3 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">Solution</div>
+                                <div class="text-4xl mb-4">✨</div>
+                                <h3 class="font-bold text-blue-800 mb-2">Dev Containers</h3>
+                                <p class="text-sm text-blue-800 text-left px-4">
+                                    ・設定ファイルをリポジトリに入れるだけ<br>
+                                    ・VS Codeで開くと自動で環境構築<br>
+                                    ・<span class="font-bold text-blue-600">誰でも5分で開発開始</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r">
+                            <p class="text-green-800 font-bold">🎯 ゴール: VS Code Remote Container</p>
+                            <p class="text-sm text-green-700 mt-1">
+                                コンテナの中に「VS Codeのサーバー」を立ち上げ、手元のVS Codeから接続します。<br>
+                                手元のPCを一切汚さずに開発ができる、現代の魔法です。
+                            </p>
+                        </div>
+
+                        <div class="text-center pt-8">
+                            <button onclick="loadStep(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105">
+                                設定を始める
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "WindowsでもMacでも、コンテナ内は同じLinux環境。OSの違いによるトラブルが激減します。"
+            },
+            {
+                id: "config",
+                title: "2. 定義ファイル devcontainer.json",
+                content: `
+                    <div class="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-800">.devcontainer フォルダ</h2>
+                                <p class="text-slate-600 mt-2">
+                                    プロジェクトのルートに <code>.devcontainer</code> フォルダを作り、その中に設定ファイル <code>devcontainer.json</code> を置きます。<br>
+                                    これが「理想の開発環境」の設計図になります。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid lg:grid-cols-2 gap-8">
+                            <!-- Virtual Editor -->
+                            <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col h-[400px]">
+                                <div class="flex bg-gray-900 text-gray-400 text-xs font-mono border-b border-gray-700">
+                                    <div class="px-3 py-2 bg-gray-800 text-gray-200 border-t-2 border-blue-500">devcontainer.json</div>
+                                </div>
+                                <div class="p-4 overflow-auto flex-grow font-mono text-sm text-gray-300 relative group">
+                                    <button onclick="copyCode()" class="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+                                    <pre id="code-display" class="language-json"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Explanation & Viz -->
+                            <div class="space-y-6 flex flex-col">
+                                <div id="explanation-box" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-grow">
+                                    <h3 class="font-bold text-blue-700 mb-2">devcontainer.json の役割</h3>
+                                    <p class="text-sm text-slate-600 mb-4">
+                                        「どのOSを使うか」だけでなく、「どのVS Code拡張機能を入れるか」「起動時に何をするか」まで定義できます。
+                                    </p>
+                                    <ul class="space-y-3 text-sm text-slate-600">
+                                        <li class="flex items-start">
+                                            <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs">image</span>
+                                            <span>
+                                                <strong>ベース環境:</strong> Microsoftが用意したPython開発用のリッチなイメージを使います。
+                                            </span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs">extensions</span>
+                                            <span>
+                                                <strong>拡張機能:</strong> Python補完やDocker管理ツールなど、チーム全員に入れてほしい機能をリスト化します。
+                                            </span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs">postCreateCommand</span>
+                                            <span>
+                                                <strong>自動セットアップ:</strong> コンテナ作成後に自動で <code>pip install</code> などを走らせます。
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                             <button onclick="loadStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                ファイル準備OK！起動へ →
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "手作業でフォルダを作らなくても、VS Codeのコマンドパレット(F1)から 'Add Dev Container Configuration Files...' で自動生成できます。"
+            },
+            {
+                id: "open",
+                title: "3. コンテナで開く (Reopen)",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">運命のボタン "Reopen in Container"</h2>
+                            <p class="text-slate-600 mt-2">
+                                設定ファイルがある状態でプロジェクトを開くと、VS Codeが「コンテナで開き直しますか？」と聞いてきます。<br>
+                                これをクリックするのが、快適な開発ライフへの入り口です。
+                            </p>
+                        </div>
+
+                        <!-- VS Code Simulator -->
+                        <div class="bg-gray-900 rounded-lg shadow-2xl border border-gray-700 overflow-hidden relative h-96 flex flex-col">
+                            <!-- Title Bar -->
+                            <div class="bg-gray-800 px-4 py-2 flex items-center justify-center text-xs text-gray-400">
+                                <span>My Python Project - VS Code</span>
+                            </div>
+                            
+                            <!-- Editor Area -->
+                            <div class="flex-grow p-8 flex items-center justify-center relative bg-[#1e1e1e]">
+                                <div class="text-gray-500 text-center">
+                                    <p class="mb-4">VS Code is initializing...</p>
+                                </div>
+                                
+                                <!-- Notification Toast -->
+                                <div id="notification-toast" class="absolute bottom-4 right-4 bg-[#252526] text-white p-4 rounded shadow-lg border-l-4 border-blue-500 w-80 animate-bounce">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <span class="font-bold text-sm">Folder contains a Dev Container configuration file.</span>
+                                    </div>
+                                    <div class="flex space-x-2 mt-3">
+                                        <button onclick="simulateReopen()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold transition-colors">Reopen in Container</button>
+                                        <button class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs transition-colors">Ignore</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status Bar -->
+                            <div class="vscode-statusbar px-2 py-1 flex justify-between items-center text-xs">
+                                <div class="flex items-center">
+                                    <div id="remote-indicator" class="bg-blue-600 px-2 py-1 mr-2 flex items-center cursor-pointer transition-colors duration-500">
+                                        <span class="font-bold mr-1">><</span> <span id="remote-text">None</span>
+                                    </div>
+                                    <span class="mr-3">master*</span>
+                                    <span>0 errors</span>
+                                </div>
+                                <div>UTF-8</div>
+                            </div>
+                            
+                            <!-- Loading Overlay -->
+                            <div id="loading-overlay" class="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center hidden">
+                                <div class="w-64 bg-gray-800 rounded p-4 border border-gray-600">
+                                    <div class="text-blue-400 text-xs mb-2 font-mono">Dev Containers: Starting...</div>
+                                    <div class="w-full bg-gray-700 h-1 rounded overflow-hidden">
+                                        <div class="h-full bg-blue-500 animate-pulse w-2/3"></div>
+                                    </div>
+                                    <div class="mt-2 text-gray-400 text-[10px] font-mono" id="loading-log">Building image...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-bold text-lg text-slate-700 mb-2">裏側で起きていること</h3>
+                            <ul class="list-disc list-inside text-sm text-slate-600 space-y-1">
+                                <li>Dockerイメージのビルド（またはプル）</li>
+                                <li>コンテナの起動</li>
+                                <li><strong>VS Code Server</strong> のコンテナへのインストール</li>
+                                <li>指定した拡張機能のインストール</li>
+                                <li>ソースコードのマウント</li>
+                            </ul>
+                        </div>
+                    </div>
+                `,
+                hint: "一度コンテナをビルドすれば、次回からは数秒で起動します。"
+            },
+            {
+                id: "dev",
+                title: "4. コンテナ内での開発体験",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">そこはもう、コンテナの中</h2>
+                            <p class="text-slate-600 mt-2">
+                                見た目はいつものVS Codeですが、ターミナルを開くとそこはLinuxの世界。<br>
+                                PythonもGitも、全て設定通りのバージョンが入っています。
+                            </p>
+                        </div>
+
+                        <!-- Terminal Simulator -->
+                        <div class="bg-[#1e1e1e] rounded-lg shadow-2xl border border-gray-700 p-1 font-mono text-sm text-[#cccccc]">
+                            <div class="flex items-center px-4 py-2 bg-[#252526] rounded-t border-b border-gray-700 mb-2 text-xs">
+                                <span class="uppercase">Terminal</span>
+                            </div>
+                            <div class="p-4 h-64 overflow-y-auto terminal-scroll" id="terminal-output">
+                                <div class="mb-2">vscode@a1b2c3d4:/workspaces/my-project$ <span class="animate-pulse">_</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <button onclick="runTerminalCommand('python_ver')" class="bg-white hover:bg-gray-50 border border-slate-200 p-4 rounded-lg text-left shadow-sm transition-colors group">
+                                <div class="font-bold text-slate-700 group-hover:text-blue-600">🐍 Pythonバージョン確認</div>
+                                <div class="text-xs text-slate-500 mt-1"><code>python --version</code></div>
+                            </button>
+                            <button onclick="runTerminalCommand('pip_list')" class="bg-white hover:bg-gray-50 border border-slate-200 p-4 rounded-lg text-left shadow-sm transition-colors group">
+                                <div class="font-bold text-slate-700 group-hover:text-blue-600">📦 ライブラリ確認</div>
+                                <div class="text-xs text-slate-500 mt-1"><code>pip list</code> (Flaskが入ってるはず！)</div>
+                            </button>
+                        </div>
+                        
+                        <div class="bg-green-50 p-4 rounded-xl border border-green-200 flex items-start">
+                            <span class="text-2xl mr-3">💡</span>
+                            <div>
+                                <h4 class="font-bold text-green-800 text-sm">ホストOS（あなたのPC）は汚れません</h4>
+                                <p class="text-xs text-green-700 mt-1">
+                                    コンテナ内でいくら <code>pip install</code> しても、PC本体のPython環境には影響しません。<br>
+                                    プロジェクトごとに完全に隔離された環境を持てるのです。
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                             <button onclick="loadStep(4)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                次へ：チーム開発のメリット
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "VS Codeの左下にある緑色のマークが「Dev Container」になっていれば、コンテナ接続成功です。"
+            },
+            {
+                id: "team",
+                title: "5. チーム開発への展開",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">「New Joiner」へのおもてなし</h2>
+                            <p class="text-slate-600 mt-2">
+                                新しいメンバーがチームに入ってきた時、あなたのリポジトリをCloneして、<br>
+                                VS Codeで開くだけで環境構築が完了します。マニュアルはもう要りません。
+                            </p>
+                        </div>
+
+                        <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                            <h3 class="font-bold text-center text-slate-700 mb-6">Dev Containers 導入効果</h3>
+                            
+                            <div class="grid md:grid-cols-2 gap-8 items-center">
+                                <!-- Before -->
+                                <div class="space-y-4 opacity-60 grayscale transition-all hover:grayscale-0 hover:opacity-100">
+                                    <h4 class="font-bold text-center text-gray-500 border-b pb-2">これまでの手順書 (Wiki)</h4>
+                                    <ul class="text-sm text-gray-600 space-y-2 list-decimal list-inside bg-gray-50 p-4 rounded">
+                                        <li>Python 3.9.0 をDLしてインストール</li>
+                                        <li>PATHを通す (Win/Macで違う)</li>
+                                        <li>Gitの設定をする</li>
+                                        <li>PostgreSQLをインストール...</li>
+                                        <li>拡張機能A, B, Cを入れる...</li>
+                                        <li class="text-red-500 font-bold">動かないので先輩に聞く (2時間)</li>
+                                    </ul>
+                                </div>
+
+                                <!-- After -->
+                                <div class="space-y-4 transform scale-105">
+                                    <h4 class="font-bold text-center text-blue-600 border-b border-blue-200 pb-2">Dev Containers</h4>
+                                    <div class="bg-blue-50 p-6 rounded-lg text-center border-2 border-blue-400 border-dashed">
+                                        <div class="text-5xl mb-4">🚀</div>
+                                        <p class="font-bold text-slate-700">Open in VS Code</p>
+                                        <p class="text-xs text-slate-500 mt-2">これだけ。<br>コーヒーを飲んで待てば完了。</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-slate-800 text-white p-4 rounded-xl flex items-center shadow-lg">
+                            <span class="text-2xl mr-4">☁️</span>
+                            <div>
+                                <h4 class="font-bold text-sm">GitHub Codespaces も同じ仕組み</h4>
+                                <p class="text-xs text-slate-300 mt-1">
+                                    この <code>.devcontainer</code> 設定は、GitHubのブラウザ上エディタ (Codespaces) でもそのまま使えます。<br>
+                                    ハイスペックなPCすら不要になる未来です。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button onclick="loadStep(5)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                お片付けへ
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "「環境構築手順書」のメンテナンスコストがゼロになることが最大のROI（投資対効果）です。"
+            },
+            {
+                id: "done",
+                title: "6. 接続解除とお片付け",
+                content: `
+                    <div class="max-w-3xl mx-auto space-y-8 animate-fade-in">
+                        <div class="text-center">
+                            <h2 class="text-2xl font-bold text-slate-800">現実世界へ戻る</h2>
+                            <p class="text-slate-600 mt-2">
+                                VS Codeを閉じるか、「Close Remote Connection」を選べば、コンテナとの接続は切れます。<br>
+                                コンテナ自体も停止し、PCのリソースを解放します。
+                            </p>
+                        </div>
+
+                        <!-- Terminal Simulator -->
+                        <div class="bg-gray-900 rounded-lg shadow-lg border border-gray-700 font-mono text-sm text-gray-300 p-4">
+                            <p class="text-center text-gray-400 mb-4">[Disconnected from Dev Container: My Python Dev App]</p>
+                            <div class="flex justify-center space-x-4">
+                                <div class="text-center">
+                                    <div class="text-green-500 font-bold text-xl">Clean ✨</div>
+                                    <div class="text-xs text-gray-500">Local Environment</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-8 rounded-xl text-center shadow-lg">
+                            <h3 class="text-2xl font-bold mb-4">Step 4 Clear! 🎉</h3>
+                            <p class="mb-6 opacity-90">
+                                素晴らしい！これで「自分だけでなく、チーム全員の開発効率を上げる」スキルを手に入れました。<br>
+                                アプリ、DB、そして開発環境。<br>
+                                全てがコンテナ化された今、最後の仕上げは「自動化」です。
+                            </p>
+                            <div class="flex justify-center gap-4">
+                                <a href="#" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg transition-transform hover:scale-105">
+                                    Step 5 へ (CI/CD自動化)
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                hint: "使い終わったDev Containerのボリューム（拡張機能などのデータ）は残ります。ディスク容量が気になったらDocker Desktopから削除しましょう。"
+            }
+        ];
+
+        const codeSnippet = `{
+  "name": "My Python Dev App",
+  "image": "mcr.microsoft.com/devcontainers/python:3.9",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-azuretools.vscode-docker",
+        "njpwerner.autodocstring"
+      ]
+    }
+  },
+  "postCreateCommand": "pip install -r requirements.txt"
+}`;
+
+        // --- APP STATE ---
+        let currentStep = 0;
+        let isContainerActive = false;
+
+        // --- FUNCTIONS ---
+        function loadStep(index) {
+            currentStep = index;
+            
+            // Update UI Buttons
+            document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+                if (idx === index) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-slate-600');
+                    btn.classList.add('text-blue-700');
+                } else {
+                    btn.classList.remove('active');
+                    btn.classList.add('text-slate-600');
+                    btn.classList.remove('text-blue-700');
+                }
+            });
+
+            // Update Progress Bar
+            const progress = Math.round(((index) / (tutorialSteps.length - 1)) * 100);
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerText = `${progress}%`;
+
+            // Inject Content
+            const container = document.getElementById('main-content');
+            container.innerHTML = tutorialSteps[index].content;
+            document.getElementById('step-hint').innerText = tutorialSteps[index].hint;
+
+            // Step-specific initializations
+            if (index === 1) { // Config
+                setTimeout(() => {
+                    const display = document.getElementById('code-display');
+                    if(display) {
+                        display.textContent = codeSnippet;
+                    }
+                }, 100);
+            }
+            
+            // Reset Container Sim State if revisiting Open step
+            if (index === 2) {
+                isContainerActive = false;
+            }
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(codeSnippet);
+            alert("コードをクリップボードにコピーしました！");
+        }
+
+        function simulateReopen() {
+            const toast = document.getElementById('notification-toast');
+            const overlay = document.getElementById('loading-overlay');
+            const log = document.getElementById('loading-log');
+            const remoteIndicator = document.getElementById('remote-indicator');
+            const remoteText = document.getElementById('remote-text');
+
+            toast.style.display = 'none';
+            overlay.classList.remove('hidden');
+
+            const logs = [
+                "Starting Dev Container...",
+                "Cloning repository...",
+                "Building image...",
+                "Installing VS Code Server...",
+                "Installing extensions: ms-python.python...",
+                "Running postCreateCommand: pip install...",
+                "Connected to Dev Container."
+            ];
+
+            let delay = 0;
+            logs.forEach((msg, i) => {
+                delay += 600;
+                setTimeout(() => {
+                    log.innerText = msg;
+                }, delay);
+            });
+
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                remoteIndicator.classList.add('remote-indicator'); // Green
+                remoteIndicator.classList.remove('bg-blue-600');
+                remoteText.innerText = "Dev Container: My Python Dev App";
+                isContainerActive = true;
+                alert("コンテナ開発環境が起動しました！\nVS Codeの左下が緑色になったことに注目してください。");
+            }, delay + 600);
+        }
+
+        function runTerminalCommand(key) {
+            const terminal = document.getElementById('terminal-output');
+            
+            // Resolve command string from key
+            let cmd = key;
+            if (key === 'python_ver') cmd = 'python --version';
+            if (key === 'pip_list') cmd = 'pip list';
+            
+            terminal.innerHTML += '<div class="text-white mb-1">vscode@dev:~$ ' + cmd + '</div>';
+            
+            let output = "";
+            if (key === 'python_ver') {
+                output = '<div class="text-gray-400">Python 3.9.18</div>';
+            } else if (key === 'pip_list') {
+                // Safely construct multi-line output without template literals or risky escapes
+                output = '<div class="text-gray-400"><pre class="font-mono">';
+                output += 'Package      Version\n';
+                output += '------------ -------\n';
+                output += 'Flask        3.0.0\n';
+                output += 'pip          23.3.1\n';
+                output += 'setuptools   69.0.2';
+                output += '</pre></div>';
+            }
+
+            setTimeout(() => {
+                terminal.innerHTML += output;
+                terminal.innerHTML += '<div class="mb-2 mt-2">vscode@dev:~$ <span class="animate-pulse">_</span></div>';
+                terminal.scrollTop = terminal.scrollHeight;
+            }, 300);
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            loadStep(0);
+        };
+
+    </script>
+</body>
+</html>

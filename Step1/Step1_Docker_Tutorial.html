@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 1 詳細ガイド: 初めてのDockerfile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: "Docker Lab". Background: Warm Neutral (#f8fafc). Accents: Docker Blue (#2563eb) & Terminal Dark (#1e293b). Text: Slate (#334155). -->
+    <!-- Application Structure Plan:
+         1. **Lab Header**: Title and progress indicator.
+         2. **Interactive Workbench (Main Area)**:
+            - **Sidebar**: Step navigation (Preparation -> Code -> Build -> Verify -> Update -> Cleanup).
+            - **Workspace**: Dynamic content area changing based on the step.
+         3. **Key Interactions**:
+            - **Virtual Editor**: Tabs to view index.html and Dockerfile.
+            - **Virtual Terminal**: A simulated console where users click "Run" to see simulated Docker output animations.
+            - **Virtual Browser**: A preview frame showing the result of the containerized app.
+            - **Layer Visualization**: Chart.js doughnut chart to visually explain `FROM` and `COPY` (Image composition).
+         4. **Context**: Each section wraps the source report text in a "Do-it-yourself" wrapper, transforming static instructions into active tasks.
+    -->
+    <!-- Visualization & Content Choices:
+         - **Image Composition Chart**: Doughnut Chart (Chart.js). Goal: Inform/Organize. Shows how `FROM nginx:alpine` takes up space vs `COPY index.html`. Justification: Helps beginners visualize what an "Image" is made of.
+         - **Virtual Terminal**: HTML/JS Simulation. Goal: Change/Experience. Users "execute" commands defined in the source report.
+         - **Port Forwarding Diagram**: CSS/HTML Visual. Goal: Inform. Shows the connection between Host 8080 and Container 80.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Chart Container Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        /* Terminal Animations */
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        .typing-effect {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid transparent;
+            animation: typing 2s steps(40, end);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+            opacity: 0;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        .step-btn.active {
+            background-color: #eff6ff;
+            border-left: 4px solid #2563eb;
+            color: #1e40af;
+        }
+        .step-btn {
+            border-left: 4px solid transparent;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 z-10 flex-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🐳</span>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 leading-none">Step 1: 初めてのDockerfile</h1>
+                    <p class="text-xs text-slate-500 mt-1">Webサーバー起動ハンズオンラボ</p>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <div class="flex items-center space-x-2 text-sm text-slate-500">
+                    <span>Progress:</span>
+                    <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-blue-600 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-text">0%</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-grow flex flex-col md:flex-row overflow-hidden max-w-7xl mx-auto w-full">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="w-full md:w-64 bg-white border-r border-slate-200 flex-none overflow-y-auto z-0">
+            <div class="p-4 space-y-1">
+                <button onclick="loadStep(0)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-0">
+                    <span>1. 準備するもの</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Ready</span>
+                </button>
+                <button onclick="loadStep(1)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-1">
+                    <span>2. ファイル作成</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Edit</span>
+                </button>
+                <button onclick="loadStep(2)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-2">
+                    <span>3. コマンド実行</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Term</span>
+                </button>
+                <button onclick="loadStep(3)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-3">
+                    <span>4. 動作確認</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Web</span>
+                </button>
+                <button onclick="loadStep(4)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-4">
+                    <span>5. 更新と再ビルド</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Cycle</span>
+                </button>
+                <button onclick="loadStep(5)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-5">
+                    <span>6. お片付け</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Clean</span>
+                </button>
+            </div>
+            
+            <div class="p-4 mt-4 border-t border-slate-100">
+                <div class="bg-blue-50 p-3 rounded text-sm text-blue-800">
+                    <p class="font-bold mb-1">💡 ヒント</p>
+                    <p id="step-hint">各ステップをクリックして学習を進めましょう。</p>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="flex-grow bg-slate-50 overflow-y-auto p-4 md:p-8 relative" id="main-content">
+            <!-- Dynamic Content injected here -->
+        </main>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- DATA & CONTENT ---
+        const tutorialSteps = [
+            {
+                id: "prep",
+                title: "1. 準備するもの",
+                content: `
+                    <div class="max-w-3xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4">開発環境の確認</h2>
+                            <p class="text-lg text-slate-600 mb-6">
+                                コンテナ開発を始める前に、手元のPC環境を確認しましょう。
+                                以下の3つが揃っていれば準備完了です。
+                            </p>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center hover:shadow-md transition-shadow">
+                                <div class="text-4xl mb-4">🐳</div>
+                                <h3 class="font-bold text-lg mb-2">Docker Desktop</h3>
+                                <p class="text-sm text-slate-500 mb-4">画面右上のクジラアイコンは見えていますか？</p>
+                                <div class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">必須</div>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center hover:shadow-md transition-shadow">
+                                <div class="text-4xl mb-4">💻</div>
+                                <h3 class="font-bold text-lg mb-2">ターミナル</h3>
+                                <p class="text-sm text-slate-500 mb-4">Win: PowerShell<br>Mac: Terminal</p>
+                                <div class="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full">必須</div>
+                            </div>
+                            
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center hover:shadow-md transition-shadow">
+                                <div class="text-4xl mb-4">📝</div>
+                                <h3 class="font-bold text-lg mb-2">エディタ</h3>
+                                <p class="text-sm text-slate-500 mb-4">VS Code推奨ですが、メモ帳でもOKです。</p>
+                                <div class="inline-block bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full">自由</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <span class="text-yellow-400 text-xl">⚠️</span>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-yellow-700">
+                                        まだインストールしていない場合は、公式サイトからDocker Desktopをダウンロードしてインストールしてください。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center pt-8">
+                            <button onclick="loadStep(1)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105">
+                                準備OK！次へ進む
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "Dockerが動いているか不安な場合は、ターミナルで `docker --version` と打ってみましょう。"
+            },
+            {
+                id: "files",
+                title: "2. ファイルの作成",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-800">フォルダとファイルの作成</h2>
+                                <p class="text-slate-600 mt-2">作業用フォルダ（例: <code>my-first-container</code>）を作り、以下の2ファイルを作成します。</p>
+                            </div>
+                        </div>
+
+                        <div class="grid lg:grid-cols-2 gap-8">
+                            <!-- Virtual Editor -->
+                            <div class="bg-gray-800 rounded-lg shadow-xl overflow-hidden flex flex-col h-[500px]">
+                                <div class="flex bg-gray-900 text-gray-400 text-xs font-mono border-b border-gray-700">
+                                    <button onclick="switchTab('html')" id="tab-html" class="px-4 py-2 bg-gray-800 text-gray-200 border-t-2 border-blue-500">index.html</button>
+                                    <button onclick="switchTab('docker')" id="tab-docker" class="px-4 py-2 hover:bg-gray-700 border-t-2 border-transparent">Dockerfile</button>
+                                </div>
+                                <div class="p-4 overflow-auto flex-grow font-mono text-sm text-gray-300 relative group">
+                                    <button onclick="copyCode()" class="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+                                    <pre id="code-display" class="language-html"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Explanation & Viz -->
+                            <div class="space-y-6 flex flex-col">
+                                <div id="explanation-box" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-grow">
+                                    <!-- Dynamic explanation injected here -->
+                                </div>
+                                
+                                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                    <h4 class="font-bold text-slate-700 mb-2 text-sm text-center">Dockerfileの構成イメージ</h4>
+                                    <div class="chart-container">
+                                        <canvas id="layerChart"></canvas>
+                                    </div>
+                                    <p class="text-xs text-center text-slate-400 mt-2">コンテナイメージは層（レイヤー）のように積み重なっています</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                             <button onclick="loadStep(2)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                ファイル作成完了！次へ →
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "Dockerfileの「D」は大文字です！拡張子(.txtなど)はつけないように注意してください。"
+            },
+            {
+                id: "commands",
+                title: "3. コマンド実行",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">ターミナルでの操作</h2>
+                            <p class="text-slate-600 mt-2">作成したファイルを元に、実際にコンテナを起動します。以下のシミュレーターで体験してみましょう。</p>
+                        </div>
+
+                        <!-- Terminal Simulator -->
+                        <div class="bg-gray-900 rounded-lg shadow-2xl p-1 border border-gray-700 font-mono text-sm text-gray-300">
+                            <div class="flex items-center px-4 py-2 bg-gray-800 rounded-t border-b border-gray-700 mb-2">
+                                <div class="flex space-x-2 mr-4">
+                                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                                </div>
+                                <span class="text-xs text-gray-400">Terminal - my-first-container</span>
+                            </div>
+                            <div class="p-4 h-96 overflow-y-auto" id="terminal-output">
+                                <div class="mb-2">user@pc:~/my-first-container$ <span class="animate-pulse">_</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-bold text-lg text-blue-700 mb-2">手順1: イメージのビルド</h3>
+                                <p class="text-sm text-slate-600 mb-4">レシピ(Dockerfile)から料理(Image)を作ります。</p>
+                                <code class="block bg-slate-100 p-2 rounded text-xs mb-4 select-all">docker build -t my-web-server .</code>
+                                <button onclick="runTerminal('build')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded flex justify-center items-center">
+                                    <span class="mr-2">▶</span> 実行 (Build)
+                                </button>
+                                <p class="text-xs text-slate-400 mt-2">※ 最後の「.」を忘れずに！</p>
+                            </div>
+
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 opacity-50 pointer-events-none" id="run-control">
+                                <h3 class="font-bold text-lg text-green-700 mb-2">手順2: コンテナの起動</h3>
+                                <p class="text-sm text-slate-600 mb-4">作ったイメージを起動します。</p>
+                                <code class="block bg-slate-100 p-2 rounded text-xs mb-4 select-all">docker run -d -p 8080:80 my-web-server</code>
+                                <button onclick="runTerminal('run')" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded flex justify-center items-center">
+                                    <span class="mr-2">▶</span> 実行 (Run)
+                                </button>
+                                <p class="text-xs text-slate-400 mt-2">ポート8080(PC) → 80(コンテナ)へ転送</p>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                hint: "「docker build」でイメージ作成、「docker run」で起動。この2段階プロセスが基本です。"
+            },
+            {
+                id: "verify",
+                title: "4. 動作確認",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                         <div class="text-center">
+                            <h2 class="text-2xl font-bold text-slate-800">ブラウザで確認しよう</h2>
+                            <p class="text-slate-600 mt-2">
+                                起動が成功していれば、ブラウザで 
+                                <a href="#" class="text-blue-600 hover:underline font-mono font-bold">http://localhost:8080</a> 
+                                にアクセスするとページが表示されます。
+                            </p>
+                        </div>
+
+                        <!-- Virtual Browser -->
+                        <div class="bg-slate-200 rounded-lg shadow-xl overflow-hidden border border-slate-300 max-w-2xl mx-auto">
+                            <!-- Browser Chrome -->
+                            <div class="bg-gray-100 border-b border-gray-300 px-4 py-2 flex items-center space-x-4">
+                                <div class="flex space-x-1">
+                                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                                </div>
+                                <div class="flex-grow bg-white rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-600 font-mono flex items-center">
+                                    <span class="text-gray-400 mr-2">🔒</span> localhost:8080
+                                </div>
+                                <button onclick="refreshBrowser()" class="text-gray-500 hover:text-gray-700">↻</button>
+                            </div>
+                            
+                            <!-- Browser Viewport -->
+                            <div id="browser-viewport" class="bg-white h-[400px] w-full flex flex-col items-center pt-10 transition-opacity duration-300">
+                                <!-- Content injected via JS -->
+                                <div class="text-center p-8">
+                                    <h1 class="text-3xl font-bold text-slate-800 mb-4">🐳 ようこそ！コンテナの世界へ</h1>
+                                    <p class="text-slate-600 mb-2">これは私が初めてDockerfileから作ったWebサーバーです。</p>
+                                    <p class="text-blue-600 font-bold">コンテナの中でこのHTMLが動いています！</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-blue-50 border border-blue-100 p-6 rounded-xl max-w-2xl mx-auto">
+                            <h3 class="font-bold text-blue-800 mb-2">🎉 おめでとうございます！</h3>
+                            <p class="text-sm text-blue-700">
+                                あなたのPC上で、NginxというWebサーバーがコンテナとして隔離された状態で動いています。<br>
+                                自分のPC環境を汚さずにサーバーを立ち上げることができました。
+                            </p>
+                            <div class="mt-4 text-center">
+                                <button onclick="loadStep(4)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                    次へ：内容を変えてみる
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                hint: "表示されない場合は、Step 3に戻って「docker run」コマンドがエラーになっていないか確認してください。"
+            },
+            {
+                id: "update",
+                title: "5. 内容の変更（再ビルド）",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">もし内容を変更したくなったら？</h2>
+                            <p class="text-slate-600 mt-2">コンテナは<strong>「Immutable（不変）」</strong>です。元のファイルを書き換えても、起動中のコンテナには反映されません。</p>
+                        </div>
+
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <!-- Code Editor for Edit -->
+                            <div class="bg-gray-800 rounded-lg p-4 font-mono text-sm text-gray-300 flex flex-col">
+                                <div class="text-xs text-gray-500 mb-2">index.html (編集モード)</div>
+                                <textarea id="edit-html-area" class="w-full h-40 bg-gray-900 text-green-300 p-2 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"><!DOCTYPE html>
+...
+<body>
+    <h1>🚀 アップデート成功！</h1>
+    <p>再ビルドして内容を更新しました。</p>
+</body>
+</html></textarea>
+                                <p class="text-xs text-gray-500 mt-2">※ 自由にテキストを書き換えてみてください</p>
+                            </div>
+
+                            <!-- Explanation -->
+                            <div class="space-y-4">
+                                <div class="bg-white p-4 rounded-xl border border-slate-200">
+                                    <h3 class="font-bold text-slate-700 mb-2">更新の手順</h3>
+                                    <ol class="list-decimal list-inside text-sm text-slate-600 space-y-2">
+                                        <li>ファイルを保存する</li>
+                                        <li><code>docker build</code> で新しいイメージを作る</li>
+                                        <li>古いコンテナを止めて削除する</li>
+                                        <li><code>docker run</code> で新しいイメージを動かす</li>
+                                    </ol>
+                                </div>
+                                
+                                <button onclick="performRebuildSimulation()" id="btn-rebuild" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded shadow transition-colors flex justify-center items-center">
+                                    <span class="mr-2">🔄</span> 再ビルド＆再起動をシミュレート
+                                </button>
+                                
+                                <div id="rebuild-status" class="hidden bg-gray-900 text-green-400 p-3 rounded font-mono text-xs h-24 overflow-y-auto">
+                                    <!-- Logs -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Result Preview -->
+                        <div id="rebuild-result" class="hidden opacity-0 transition-opacity duration-500">
+                            <h3 class="font-bold text-slate-700 mb-2 text-center">更新後のブラウザ表示</h3>
+                            <div class="bg-white border border-gray-300 p-8 rounded-lg shadow-inner text-center max-w-md mx-auto">
+                                <div id="updated-browser-content"></div>
+                            </div>
+                             <div class="mt-6 text-center">
+                                <p class="text-sm text-slate-500 mb-4">「毎回ビルドするのは面倒！」と感じましたか？それが正常です。<br>次回学ぶ <strong>Docker Compose</strong> でその手間を解消できます。</p>
+                                <button onclick="loadStep(5)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                    最後の手順へ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `,
+                hint: "コンテナは「使い捨て」が基本思想です。更新する時は、継ぎ足すのではなく「作り直す」のが作法です。"
+            },
+            {
+                id: "clean",
+                title: "6. お片付け",
+                content: `
+                    <div class="max-w-3xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">コンテナの停止と削除</h2>
+                            <p class="text-slate-600 mt-2">遊び終わったら、起動したままのコンテナを片付けましょう。</p>
+                        </div>
+
+                        <div class="bg-gray-900 rounded-lg shadow-lg border border-gray-700 font-mono text-sm text-gray-300 p-4">
+                            <div class="space-y-4">
+                                <div>
+                                    <p class="text-gray-500"># 1. 起動中のコンテナを確認 (IDをチェック)</p>
+                                    <div class="flex items-center">
+                                        <span class="mr-2 text-green-400">$</span>
+                                        <input type="text" value="docker ps" readonly class="bg-transparent outline-none w-full cursor-text text-white">
+                                    </div>
+                                    <div class="text-gray-400 mt-1 pl-4 border-l-2 border-gray-700 text-xs">
+                                        CONTAINER ID &nbsp; IMAGE &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; STATUS<br>
+                                        <span class="text-yellow-300">a1b2c3d4</span> &nbsp;&nbsp;&nbsp;&nbsp; my-web-server &nbsp; Up 5 minutes
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500"># 2. コンテナを停止 (IDの先頭を指定)</p>
+                                    <div class="flex items-center">
+                                        <span class="mr-2 text-green-400">$</span>
+                                        <span class="text-white">docker stop <span class="text-yellow-300">a1b2</span></span>
+                                    </div>
+                                    <div class="text-gray-400 mt-1 pl-4 text-xs">a1b2</div>
+                                </div>
+
+                                <div>
+                                    <p class="text-gray-500"># 3. コンテナを削除</p>
+                                    <div class="flex items-center">
+                                        <span class="mr-2 text-green-400">$</span>
+                                        <span class="text-white">docker rm <span class="text-yellow-300">a1b2</span></span>
+                                    </div>
+                                    <div class="text-gray-400 mt-1 pl-4 text-xs">a1b2</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-green-50 border border-green-100 p-8 rounded-xl text-center">
+                            <h3 class="text-2xl font-bold text-green-800 mb-4">Step 1 クリア！🎉</h3>
+                            <p class="text-green-700 mb-6">
+                                あなたはコンテナの基本的なライフサイクル（作成・起動・停止・削除）をマスターしました。
+                                次は、アプリとデータベースを連携させる「Step 2 & 3」に挑戦しましょう！
+                            </p>
+                            <a href="#" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform hover:scale-105">
+                                ロードマップに戻る
+                            </a>
+                        </div>
+                    </div>
+                `,
+                hint: "コンテナを削除しても、イメージ（my-web-server）は残っています。完全に消すなら `docker rmi my-web-server` です。"
+            }
+        ];
+
+        const codeSnippets = {
+            html: `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello Docker!</title>
+</head>
+<body style="background-color: #f0f8ff; text-align: center; padding-top: 50px;">
+    <h1>🐳 ようこそ！コンテナの世界へ</h1>
+    <p>これは私が初めてDockerfileから作ったWebサーバーです。</p>
+    <p>コンテナの中でこのHTMLが動いています！</p>
+</body>
+</html>`,
+            docker: `# 1. ベースとなるOSとソフトを指定
+FROM nginx:alpine
+
+# 2. ファイルをコンテナ内にコピー
+COPY ./index.html /usr/share/nginx/html/index.html`
+        };
+
+        const explanations = {
+            html: `
+                <h3 class="font-bold text-blue-700 mb-2">① index.html</h3>
+                <p class="text-sm text-slate-600 mb-4">これがWebサイトの本体です。特に変わったところのない、普通のHTMLファイルです。</p>
+                <p class="text-xs bg-slate-100 p-2 rounded">
+                    <strong>Point:</strong> コンテナ開発でも、アプリのコード（HTMLやPythonなど）自体は、普段書いているものと同じです。
+                </p>
+            `,
+            docker: `
+                <h3 class="font-bold text-blue-700 mb-2">② Dockerfile</h3>
+                <p class="text-sm text-slate-600 mb-4">これがコンテナの設計図（レシピ）です。</p>
+                <ul class="space-y-3 text-sm">
+                    <li class="flex items-start">
+                        <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs">FROM</span>
+                        <span>
+                            <strong>ベースイメージ:</strong> <br>
+                            「nginx入り軽量Linux (alpine)」を土台にします。<br>
+                            <span class="text-xs text-slate-400">※ これだけでOSとWebサーバーが用意されます。</span>
+                        </span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs">COPY</span>
+                        <span>
+                            <strong>ファイル配置:</strong> <br>
+                            PC上の <code>index.html</code> を、コンテナ内のNginxが読み込む場所へコピーします。
+                        </span>
+                    </li>
+                </ul>
+            `
+        };
+
+        // --- APP STATE ---
+        let currentStep = 0;
+
+        // --- FUNCTIONS ---
+        function loadStep(index) {
+            currentStep = index;
+            
+            // Update UI
+            document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+                if (idx === index) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-slate-600');
+                    btn.classList.add('text-blue-700');
+                } else {
+                    btn.classList.remove('active');
+                    btn.classList.add('text-slate-600');
+                    btn.classList.remove('text-blue-700');
+                }
+            });
+
+            // Update Progress Bar
+            const progress = Math.round(((index) / (tutorialSteps.length - 1)) * 100);
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerText = `${progress}%`;
+
+            // Inject Content
+            const container = document.getElementById('main-content');
+            container.innerHTML = tutorialSteps[index].content;
+            document.getElementById('step-hint').innerText = tutorialSteps[index].hint;
+
+            // Step-specific initializations
+            if (index === 1) { // Files
+                setTimeout(() => {
+                    switchTab('html');
+                    initLayerChart();
+                }, 100);
+            }
+        }
+
+        function switchTab(type) {
+            const display = document.getElementById('code-display');
+            const explain = document.getElementById('explanation-box');
+            const tabHtml = document.getElementById('tab-html');
+            const tabDocker = document.getElementById('tab-docker');
+
+            display.textContent = codeSnippets[type];
+            explain.innerHTML = explanations[type];
+
+            if (type === 'html') {
+                tabHtml.classList.add('bg-gray-800', 'text-gray-200', 'border-blue-500');
+                tabHtml.classList.remove('hover:bg-gray-700', 'border-transparent');
+                tabDocker.classList.remove('bg-gray-800', 'text-gray-200', 'border-blue-500');
+                tabDocker.classList.add('hover:bg-gray-700', 'border-transparent');
+            } else {
+                tabDocker.classList.add('bg-gray-800', 'text-gray-200', 'border-blue-500');
+                tabDocker.classList.remove('hover:bg-gray-700', 'border-transparent');
+                tabHtml.classList.remove('bg-gray-800', 'text-gray-200', 'border-blue-500');
+                tabHtml.classList.add('hover:bg-gray-700', 'border-transparent');
+            }
+        }
+
+        function copyCode() {
+            const code = document.getElementById('code-display').innerText;
+            navigator.clipboard.writeText(code);
+            alert("コードをコピーしました！");
+        }
+
+        function initLayerChart() {
+            const ctx = document.getElementById('layerChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Alpine Linux (OS)', 'Nginx (Middleware)', 'index.html (App)'],
+                    datasets: [{
+                        data: [5, 15, 1], // Artificial weights for visualization
+                        backgroundColor: [
+                            '#3b82f6', // OS - Blue
+                            '#10b981', // Middleware - Green
+                            '#f59e0b'  // App - Yellow
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': Layer';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function runTerminal(action) {
+            const terminal = document.getElementById('terminal-output');
+            
+            if (action === 'build') {
+                const logs = [
+                    "Sending build context to Docker daemon  2.048kB",
+                    "Step 1/2 : FROM nginx:alpine",
+                    " ---> a1b2c3d4e5f6",
+                    "Step 2/2 : COPY ./index.html /usr/share/nginx/html/index.html",
+                    " ---> Using cache",
+                    " ---> 7890abcdef12",
+                    "Successfully built 7890abcdef12",
+                    "Successfully tagged my-web-server:latest"
+                ];
+                
+                let delay = 0;
+                terminal.innerHTML += `<div class="text-green-400 mb-1">$ docker build -t my-web-server .</div>`;
+                
+                logs.forEach((log, i) => {
+                    setTimeout(() => {
+                        terminal.innerHTML += `<div class="text-gray-400 text-xs">${log}</div>`;
+                        terminal.scrollTop = terminal.scrollHeight;
+                    }, 500 * (i + 1));
+                    delay = 500 * (i + 1);
+                });
+
+                setTimeout(() => {
+                    terminal.innerHTML += `<div class="mb-2 mt-2">user@pc:~/my-first-container$ <span class="animate-pulse">_</span></div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    document.getElementById('run-control').classList.remove('opacity-50', 'pointer-events-none');
+                }, delay + 500);
+
+            } else if (action === 'run') {
+                terminal.innerHTML += `<div class="text-green-400 mb-1">$ docker run -d -p 8080:80 my-web-server</div>`;
+                setTimeout(() => {
+                    terminal.innerHTML += `<div class="text-gray-300 text-xs">d1e2f3g4h5i6j7k8l9m0... (Container ID)</div>`;
+                    terminal.innerHTML += `<div class="mb-2 mt-2">user@pc:~/my-first-container$ <span class="animate-pulse">_</span></div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                    // Trigger next step encouragement or unlock
+                    alert("コンテナが起動しました！左のメニューから「動作確認」へ進んでください。");
+                }, 800);
+            }
+        }
+
+        function performRebuildSimulation() {
+            const statusArea = document.getElementById('rebuild-status');
+            const resultArea = document.getElementById('rebuild-result');
+            const textArea = document.getElementById('edit-html-area').value;
+            const updatedBrowser = document.getElementById('updated-browser-content');
+            
+            // Extract h1 and p content broadly (simple simulation)
+            // Just displaying what they typed roughly
+            
+            statusArea.classList.remove('hidden');
+            statusArea.innerHTML = '> Saving index.html...<br>';
+            
+            setTimeout(() => { statusArea.innerHTML += '> docker build -t my-web-server .<br>'; }, 500);
+            setTimeout(() => { statusArea.innerHTML += '> docker stop old_container<br>'; }, 1500);
+            setTimeout(() => { statusArea.innerHTML += '> docker rm old_container<br>'; }, 2000);
+            setTimeout(() => { statusArea.innerHTML += '> docker run -d -p 8080:80 my-web-server<br>'; }, 2500);
+            setTimeout(() => { 
+                statusArea.innerHTML += '<span class="text-green-400">DONE! Refreshing browser...</span>'; 
+                
+                // Parse simple HTML for preview (sanitized roughly by just taking value)
+                // For safety in this constrained env, we just use the value as innerHTML but 
+                // in real app we'd sanitize. Here we assume user is author.
+                updatedBrowser.innerHTML = textArea; 
+                
+                resultArea.classList.remove('hidden');
+                setTimeout(() => { resultArea.classList.remove('opacity-0'); }, 100);
+            }, 3000);
+        }
+
+        function refreshBrowser() {
+            const viewport = document.getElementById('browser-viewport');
+            viewport.style.opacity = '0.5';
+            setTimeout(() => {
+                viewport.style.opacity = '1';
+            }, 300);
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            loadStep(0);
+        };
+
+    </script>
+</body>
+</html>

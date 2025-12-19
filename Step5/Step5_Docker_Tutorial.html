@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 5 詳細ガイド: CI/CD (自動化の工場)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Chosen Palette: "GitHub Actions". Background: Cool Gray (#f0f6fc). Accents: Action Blue (#2088ff) & Success Green (#2ea44f). -->
+    <!-- Application Structure Plan: Consistent with previous steps.
+         - Key Change: Introduction of ".github/workflows" concept.
+         - Key Change: Simulation of "git push" triggering a remote build.
+         - Key Change: Visual "Pipeline" animation showing the build process stages.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f0f6fc; /* GitHub-like light bg */
+            color: #24292f;
+        }
+        .font-mono {
+            font-family: 'Fira Code', monospace;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 250px;
+            max-height: 300px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        .typing-effect {
+            overflow: hidden;
+            white-space: nowrap;
+            border-right: 2px solid transparent;
+            animation: typing 2s steps(40, end);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in forwards;
+            opacity: 0;
+        }
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        .step-btn.active {
+            background-color: #ddf4ff; /* Light Blue */
+            border-left: 4px solid #0969da;
+            color: #0969da;
+        }
+        .step-btn {
+            border-left: 4px solid transparent;
+        }
+        /* Pipeline Animation Styles */
+        .pipeline-node {
+            transition: all 0.5s ease;
+        }
+        .pipeline-line {
+            transition: all 0.5s ease;
+            height: 4px;
+            background-color: #d0d7de;
+        }
+        .pipeline-node.completed {
+            background-color: #2ea44f;
+            color: white;
+            border-color: #2ea44f;
+        }
+        .pipeline-node.running {
+            background-color: #bf8700; /* Yellow/Orange */
+            color: white;
+            border-color: #bf8700;
+            animation: pulse 1s infinite;
+        }
+        .pipeline-line.completed {
+            background-color: #2ea44f;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 z-10 flex-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🏭</span>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 leading-none">Step 5: 自動化の工場を作る</h1>
+                    <p class="text-xs text-slate-500 mt-1">CI/CD & GitHub Actions ハンズオン</p>
+                </div>
+            </div>
+            <div class="hidden md:block">
+                <div class="flex items-center space-x-2 text-sm text-slate-500">
+                    <span>Progress:</span>
+                    <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                    <span id="progress-text">0%</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="flex-grow flex flex-col md:flex-row overflow-hidden max-w-7xl mx-auto w-full">
+        
+        <!-- Sidebar Navigation -->
+        <nav class="w-full md:w-64 bg-white border-r border-slate-200 flex-none overflow-y-auto z-0">
+            <div class="p-4 space-y-1">
+                <button onclick="loadStep(0)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-0">
+                    <span>1. コンセプト</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Intro</span>
+                </button>
+                <button onclick="loadStep(1)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-1">
+                    <span>2. 設計図を書く</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">YAML</span>
+                </button>
+                <button onclick="loadStep(2)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-2">
+                    <span>3. Push & Trigger</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Git</span>
+                </button>
+                <button onclick="loadStep(3)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-3">
+                    <span>4. 自動ビルド体験</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Run</span>
+                </button>
+                <button onclick="loadStep(4)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-4">
+                    <span>5. 成果物確認</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Verify</span>
+                </button>
+                <button onclick="loadStep(5)" class="step-btn w-full text-left px-4 py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex items-center justify-between" id="btn-step-5">
+                    <span>6. ロードマップ完了</span>
+                    <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400">Goal</span>
+                </button>
+            </div>
+            
+            <div class="p-4 mt-4 border-t border-slate-100">
+                <div class="bg-gray-100 p-3 rounded text-sm text-gray-800 border border-gray-200">
+                    <p class="font-bold mb-1">▶ Actions</p>
+                    <p id="step-hint">GitHubが提供する、クラウド上の自動化ロボットです。</p>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="flex-grow bg-slate-50 overflow-y-auto p-4 md:p-8 relative" id="main-content">
+            <!-- Dynamic Content injected here -->
+        </main>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // --- DATA & CONTENT ---
+        const tutorialSteps = [
+            {
+                id: "concept",
+                title: "1. 最後のピース：CI/CD",
+                content: `
+                    <div class="max-w-3xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4">「手作り」から「工場生産」へ</h2>
+                            <p class="text-lg text-slate-600 mb-6">
+                                これまでは、あなたのPCでコマンドを打ってコンテナを作っていました（手作り）。<br>
+                                Step 5では、コードをGitHubに送るだけで、クラウド上のサーバーが勝手にテストし、コンテナをビルドしてくれる仕組み（工場）を作ります。
+                            </p>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center opacity-70">
+                                <div class="text-4xl mb-4">✋</div>
+                                <h3 class="font-bold text-slate-700 mb-2">手動ビルド</h3>
+                                <p class="text-sm text-slate-500 text-left px-4">
+                                    ・<code>docker build</code> を毎回叩く<br>
+                                    ・担当者のPCが壊れたらビルドできない<br>
+                                    ・「私の環境では動いた」問題が残る
+                                </p>
+                            </div>
+                            <div class="bg-blue-50 p-6 rounded-xl shadow-md border border-blue-200 text-center relative">
+                                <div class="absolute -top-3 -right-3 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow">CI/CD</div>
+                                <div class="text-4xl mb-4">🤖</div>
+                                <h3 class="font-bold text-blue-800 mb-2">自動ビルド (CI)</h3>
+                                <p class="text-sm text-blue-800 text-left px-4">
+                                    ・コードをPushするだけ<br>
+                                    ・クリーンな環境で毎回ビルド<br>
+                                    ・<span class="font-bold">誰でも・いつでも・同じ品質</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 text-white p-4 rounded-xl flex items-center shadow-lg">
+                            <span class="text-2xl mr-4">🏭</span>
+                            <div>
+                                <h4 class="font-bold text-sm">GitHub Actions</h4>
+                                <p class="text-xs text-gray-300 mt-1">
+                                    GitHubのリポジトリに「ワークフロー設定ファイル」を置くだけで、<br>
+                                    Microsoftのクラウドサーバー(Runner)があなたの代わりにコマンドを実行してくれます。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="text-center pt-8">
+                            <button onclick="loadStep(1)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all transform hover:scale-105">
+                                工場の設計図を書く
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "CI (Continuous Integration) = 継続的インテグレーション。常にビルドとテストを繰り返して品質を保つこと。"
+            },
+            {
+                id: "config",
+                title: "2. ワークフロー定義ファイル",
+                content: `
+                    <div class="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <h2 class="text-2xl font-bold text-slate-800">.github/workflows/ci.yml</h2>
+                                <p class="text-slate-600 mt-2">
+                                    このフォルダにYAMLファイルを置くと、GitHubがそれを認識して自動実行します。<br>
+                                    「いつ」「どのマシンで」「何のコマンドを実行するか」を書きます。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid lg:grid-cols-2 gap-8">
+                            <!-- Virtual Editor -->
+                            <div class="bg-gray-900 rounded-lg shadow-xl overflow-hidden flex flex-col h-[450px]">
+                                <div class="flex bg-gray-800 text-gray-400 text-xs font-mono border-b border-gray-700">
+                                    <div class="px-3 py-2 bg-gray-900 text-gray-200 border-t-2 border-green-500">ci.yml</div>
+                                </div>
+                                <div class="p-4 overflow-auto flex-grow font-mono text-sm text-gray-300 relative group">
+                                    <button onclick="copyCode()" class="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+                                    <pre id="code-display" class="language-yaml"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Explanation & Viz -->
+                            <div class="space-y-6 flex flex-col">
+                                <div id="explanation-box" class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-grow">
+                                    <h3 class="font-bold text-blue-700 mb-2">YAMLの読み方</h3>
+                                    <ul class="space-y-4 text-sm text-slate-600">
+                                        <li class="flex items-start">
+                                            <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs text-nowrap">on: push</span>
+                                            <span>
+                                                <strong>トリガー:</strong> 誰かがコードをPushしたら起動するスイッチです。
+                                            </span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs text-nowrap">runs-on: ubuntu</span>
+                                            <span>
+                                                <strong>実行環境:</strong> Microsoftが用意したUbuntuサーバーを一時的に借ります。
+                                            </span>
+                                        </li>
+                                        <li class="flex items-start">
+                                            <span class="font-mono bg-slate-200 px-1 rounded mr-2 text-xs text-nowrap">steps:</span>
+                                            <span>
+                                                <strong>手順:</strong>
+                                                <ol class="list-decimal list-inside ml-2 mt-1 text-xs text-slate-500">
+                                                    <li>リポジトリのコードをチェックアウト (DL)</li>
+                                                    <li><code>docker build</code> を実行</li>
+                                                    <li>(本番ならここで <code>docker push</code>)</li>
+                                                </ol>
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right">
+                             <button onclick="loadStep(2)" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors">
+                                ファイル準備OK！Pushへ →
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "インデント（字下げ）が命です。スペースの数がズレると動かないので注意！"
+            },
+            {
+                id: "trigger",
+                title: "3. Push & Trigger",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">スイッチを押す（Git Push）</h2>
+                            <p class="text-slate-600 mt-2">
+                                ファイルができたら、GitHubにアップロード（Push）します。<br>
+                                これが工場の起動スイッチになります。
+                            </p>
+                        </div>
+
+                        <!-- Terminal Simulator -->
+                        <div class="bg-gray-900 rounded-lg shadow-2xl p-1 border border-gray-700 font-mono text-sm text-gray-300">
+                            <div class="flex items-center px-4 py-2 bg-gray-800 rounded-t border-b border-gray-700 mb-2">
+                                <span class="text-xs text-gray-400">Local Terminal</span>
+                            </div>
+                            <div class="p-4 h-64 overflow-y-auto" id="local-terminal">
+                                <div class="mb-2">user@pc:~/my-app$ <span class="animate-pulse">_</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 text-center">
+                            <h3 class="font-bold text-lg text-slate-700 mb-4">変更をコミットしてPush</h3>
+                            <button onclick="simulatePush()" id="push-btn" class="bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform active:scale-95 flex items-center justify-center mx-auto">
+                                <span class="mr-2">🚀</span> git push origin main
+                            </button>
+                            <p class="text-xs text-slate-400 mt-3">クリックするとコマンドが実行されます</p>
+                        </div>
+                    </div>
+                `,
+                hint: "実際の開発では VS Code のGUIからPushすることも多いですが、裏ではこのコマンドが動いています。"
+            },
+            {
+                id: "run",
+                title: "4. 自動ビルド体験 (Pipeline)",
+                content: `
+                    <div class="max-w-5xl mx-auto space-y-6 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">工場が動き出す</h2>
+                            <p class="text-slate-600 mt-2">
+                                Pushを検知して、クラウド上のサーバーが動き始めました。<br>
+                                リアルタイムでログが流れる様子を見てみましょう。
+                            </p>
+                        </div>
+
+                        <!-- Pipeline Visualizer -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-4">
+                            <div class="flex items-center justify-between max-w-3xl mx-auto relative">
+                                <!-- Line Background -->
+                                <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-0"></div>
+                                
+                                <!-- Node 1 -->
+                                <div id="node-1" class="pipeline-node relative z-10 w-12 h-12 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center font-bold text-gray-500">
+                                    1
+                                    <div class="absolute -bottom-6 text-xs text-gray-500 w-24 text-center font-normal">Queued</div>
+                                </div>
+                                <!-- Line 1 -->
+                                <div id="line-1" class="pipeline-line flex-grow h-1 bg-gray-200 z-0"></div>
+                                
+                                <!-- Node 2 -->
+                                <div id="node-2" class="pipeline-node relative z-10 w-12 h-12 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center font-bold text-gray-500">
+                                    2
+                                    <div class="absolute -bottom-6 text-xs text-gray-500 w-24 text-center font-normal">Checkout</div>
+                                </div>
+                                <!-- Line 2 -->
+                                <div id="line-2" class="pipeline-line flex-grow h-1 bg-gray-200 z-0"></div>
+
+                                <!-- Node 3 -->
+                                <div id="node-3" class="pipeline-node relative z-10 w-12 h-12 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center font-bold text-gray-500">
+                                    3
+                                    <div class="absolute -bottom-6 text-xs text-gray-500 w-24 text-center font-normal">Build</div>
+                                </div>
+                                
+                                <!-- Line 3 -->
+                                <div id="line-3" class="pipeline-line flex-grow h-1 bg-gray-200 z-0"></div>
+
+                                <!-- Node 4 -->
+                                <div id="node-4" class="pipeline-node relative z-10 w-12 h-12 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center font-bold text-gray-500">
+                                    4
+                                    <div class="absolute -bottom-6 text-xs text-gray-500 w-24 text-center font-normal">Complete</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Runner Terminal -->
+                        <div class="bg-[#0d1117] rounded-lg shadow-2xl border border-gray-700 font-mono text-xs text-gray-300 p-1">
+                            <div class="flex items-center px-4 py-2 bg-[#161b22] rounded-t border-b border-gray-700 mb-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500 mr-4"></div>
+                                <span class="text-gray-400">gh-actions-runner-2b7a9f -- build-job</span>
+                            </div>
+                            <div class="p-4 h-64 overflow-y-auto" id="runner-logs">
+                                <div class="text-gray-500 animate-pulse">Waiting for runner...</div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4 hidden" id="finish-btn-area">
+                             <button onclick="loadStep(4)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow transition-colors animate-bounce">
+                                結果を確認する →
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "本物のGitHub Actionsでも、このようにリアルタイムで黒い画面（ログ）を見ることができます。"
+            },
+            {
+                id: "verify",
+                title: "5. 成果物確認 (Green Check)",
+                content: `
+                    <div class="max-w-4xl mx-auto space-y-6 animate-fade-in">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">It works on the Cloud!</h2>
+                            <p class="text-slate-600 mt-2">
+                                ビルドが成功しました。GitHub上ではこのように表示されます。
+                            </p>
+                        </div>
+
+                        <!-- GitHub UI Simulator -->
+                        <div class="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden max-w-2xl mx-auto">
+                            <div class="bg-[#f6f8fa] px-4 py-3 border-b border-gray-200 flex items-center">
+                                <span class="font-bold text-sm text-slate-700 mr-2">my-app</span>
+                                <span class="text-xs text-slate-500 bg-gray-200 px-2 py-0.5 rounded-full">Public</span>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-start space-x-3 mb-4">
+                                    <div class="text-green-500 text-xl mt-1">✔</div>
+                                    <div>
+                                        <div class="font-bold text-slate-800 text-sm">Merge pull request #1 from feature/docker-ci</div>
+                                        <div class="text-xs text-slate-500">2 minutes ago</div>
+                                        
+                                        <!-- Check Status -->
+                                        <div class="mt-2 flex items-center space-x-2">
+                                            <span class="text-green-500 text-lg">●</span>
+                                            <span class="text-sm font-bold text-slate-700">All checks passed</span>
+                                        </div>
+                                        <div class="ml-6 border-l-2 border-gray-200 pl-3 py-1 mt-1">
+                                            <div class="flex items-center justify-between text-xs py-1">
+                                                <span class="flex items-center">
+                                                    <span class="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center text-white text-[10px] mr-2">✓</span>
+                                                    <strong>build</strong> (push)
+                                                </span>
+                                                <span class="text-slate-500">Details</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-green-50 p-6 rounded-xl border border-green-100 text-center">
+                            <h3 class="text-xl font-bold text-green-800 mb-2">🎉 ミッションコンプリート</h3>
+                            <p class="text-green-700 text-sm mb-4">
+                                これであなたのプロジェクトは、コードを変更するたびに<br>
+                                <strong>「自動的に清潔な環境でテスト・ビルドされる」</strong><br>
+                                最強の状態になりました。
+                            </p>
+                            <button onclick="loadStep(5)" class="bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform hover:scale-105">
+                                ロードマップを卒業する
+                            </button>
+                        </div>
+                    </div>
+                `,
+                hint: "「緑のチェックマーク」はエンジニアにとって精神安定剤です。"
+            },
+            {
+                id: "done",
+                title: "6. ロードマップ完了：次の冒険へ",
+                content: `
+                    <div class="max-w-3xl mx-auto space-y-8 animate-fade-in text-center">
+                        <div>
+                            <div class="text-6xl mb-4">🎓</div>
+                            <h2 class="text-3xl font-bold text-slate-800 mb-4">Container Master!</h2>
+                            <p class="text-lg text-slate-600 mb-6">
+                                おめでとうございます！<br>Step 1から5まで、コンテナ技術の基礎から自動化までを駆け抜けました。
+                            </p>
+                        </div>
+
+                        <div class="grid grid-cols-5 gap-2 text-xs text-white mb-8 max-w-lg mx-auto">
+                            <div class="bg-blue-500 py-2 rounded">Step 1<br>Dockerfile</div>
+                            <div class="bg-blue-600 py-2 rounded">Step 2<br>App</div>
+                            <div class="bg-orange-500 py-2 rounded">Step 3<br>Compose</div>
+                            <div class="bg-indigo-600 py-2 rounded">Step 4<br>DevEnv</div>
+                            <div class="bg-green-600 py-2 rounded transform scale-110 shadow-lg border-2 border-white">Step 5<br>CI/CD</div>
+                        </div>
+
+                        <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-left">
+                            <h3 class="font-bold text-lg text-slate-700 mb-4 border-b pb-2">得られたスキル</h3>
+                            <ul class="space-y-2 text-slate-600">
+                                <li>✅ <span class="font-bold">環境のコード化:</span> "It works on my machine" の撲滅</li>
+                                <li>✅ <span class="font-bold">マイクロサービス:</span> アプリとDBの連携・分離</li>
+                                <li>✅ <span class="font-bold">開発の標準化:</span> チーム全員が同じエディタ環境</li>
+                                <li>✅ <span class="font-bold">運用の自動化:</span> 寝ている間にビルド完了</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-6 rounded-xl mt-8">
+                            <h4 class="font-bold mb-2">Next Stage: Kubernetes (k8s) & Cloud ☁️</h4>
+                            <p class="text-sm opacity-90 mb-4">
+                                作ったコンテナを、今度は「数百個同時に管理」し「世界中に公開」する技術が待っています。
+                            </p>
+                            <a href="#" class="inline-block bg-white text-purple-600 font-bold py-3 px-8 rounded-full shadow transition-transform hover:scale-105">
+                                最初のページに戻る
+                            </a>
+                        </div>
+                    </div>
+                `,
+                hint: "旅はまだ始まったばかりです。でも、もう地図（基礎知識）は持っています！"
+            }
+        ];
+
+        const codeSnippet = `name: Docker Image CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)`;
+
+        // --- APP STATE ---
+        let currentStep = 0;
+        let simulationTimeouts = []; // Stores active animation timeouts
+
+        // --- FUNCTIONS ---
+        function loadStep(index) {
+            clearSimulation(); // Reset any running animations
+            currentStep = index;
+            
+            // Update UI Buttons
+            document.querySelectorAll('.step-btn').forEach((btn, idx) => {
+                if (idx === index) {
+                    btn.classList.add('active');
+                    btn.classList.remove('text-slate-600');
+                    btn.classList.add('text-blue-700');
+                } else {
+                    btn.classList.remove('active');
+                    btn.classList.add('text-slate-600');
+                    btn.classList.remove('text-blue-700');
+                }
+            });
+
+            // Update Progress Bar
+            const progress = Math.round(((index) / (tutorialSteps.length - 1)) * 100);
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            document.getElementById('progress-text').innerText = `${progress}%`;
+
+            // Inject Content
+            const container = document.getElementById('main-content');
+            container.innerHTML = tutorialSteps[index].content;
+            document.getElementById('step-hint').innerText = tutorialSteps[index].hint;
+
+            // Step-specific initializations
+            if (index === 1) { // Config
+                setTimeout(() => {
+                    const display = document.getElementById('code-display');
+                    if(display) {
+                        display.textContent = codeSnippet;
+                    }
+                }, 100);
+            }
+            if (index === 3) { // Run Pipeline
+                const id = setTimeout(() => {
+                    runPipelineSimulation();
+                }, 500);
+                simulationTimeouts.push(id);
+            }
+        }
+
+        // New function to clear running timeouts when switching steps
+        function clearSimulation() {
+            simulationTimeouts.forEach(id => clearTimeout(id));
+            simulationTimeouts = [];
+        }
+
+        function copyCode() {
+            navigator.clipboard.writeText(codeSnippet);
+            alert("設定をクリップボードにコピーしました！");
+        }
+
+        function simulatePush() {
+            const btn = document.getElementById('push-btn');
+            const term = document.getElementById('local-terminal');
+            
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            btn.innerHTML = 'Pushing...';
+
+            const logs = [
+                "Enumerating objects: 5, done.",
+                "Counting objects: 100% (5/5), done.",
+                "Delta compression using up to 8 threads",
+                "Compressing objects: 100% (3/3), done.",
+                "Writing objects: 100% (3/3), 320 bytes | 320.00 KiB/s, done.",
+                "Total 3 (delta 1), reused 0 (delta 0)",
+                "To github.com:user/my-app.git",
+                "   a1b2c3d..e5f6g7h  main -> main"
+            ];
+
+            let delay = 0;
+            logs.forEach((log) => {
+                delay += 400;
+                const id = setTimeout(() => {
+                    if(!term) return; // Safety Check
+                    term.innerHTML += `<div class="text-white text-xs">${log}</div>`;
+                    term.scrollTop = term.scrollHeight;
+                }, delay);
+                simulationTimeouts.push(id);
+            });
+
+            const finishId = setTimeout(() => {
+                if(!term) return; // Safety Check
+                term.innerHTML += `<div class="mb-2 mt-2">user@pc:~/my-app$ <span class="animate-pulse">_</span></div>`;
+                term.scrollTop = term.scrollHeight;
+                alert("Push完了！GitHub Actionsが起動しました。\n「自動ビルド体験」へ進んでください。");
+                btn.innerHTML = '🚀 git push origin main';
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                loadStep(3); // Auto advance for better flow
+            }, delay + 500);
+            simulationTimeouts.push(finishId);
+        }
+
+        function runPipelineSimulation() {
+            const logsArea = document.getElementById('runner-logs');
+            const finishBtn = document.getElementById('finish-btn-area');
+            
+            // Safety Check: Exit if user navigated away
+            if (!logsArea) return;
+
+            const steps = [
+                { node: 'node-1', line: 'line-1', delay: 500, log: "Starting workflow run..." },
+                { node: 'node-1', line: 'line-1', delay: 1000, log: "Provisioning server..." },
+                { node: 'node-2', line: 'line-1', delay: 2000, log: "Checkout repository..." },
+                { node: 'node-2', line: 'line-2', delay: 3000, log: "Setting up Docker..." },
+                { node: 'node-3', line: 'line-2', delay: 4000, log: "Step: Build Docker image" },
+                { node: 'node-3', line: 'line-2', delay: 4500, log: " > docker build . -t my-app" },
+                { node: 'node-3', line: 'line-2', delay: 5000, log: " > [1/3] FROM python:3.9" },
+                { node: 'node-3', line: 'line-2', delay: 5500, log: " > [2/3] COPY . ." },
+                { node: 'node-3', line: 'line-2', delay: 6000, log: " > [3/3] RUN pip install" },
+                { node: 'node-3', line: 'line-3', delay: 7000, log: "Build completed successfully." },
+                { node: 'node-4', line: 'line-3', delay: 8000, log: "Cleaning up..." },
+                { node: 'node-4', line: 'line-3', delay: 8500, log: "Job completed." }
+            ];
+
+            // Reset UI
+            logsArea.innerHTML = '';
+            document.querySelectorAll('.pipeline-node').forEach(n => n.className = 'pipeline-node relative z-10 w-12 h-12 rounded-full bg-white border-4 border-gray-300 flex items-center justify-center font-bold text-gray-500');
+            document.querySelectorAll('.pipeline-line').forEach(l => l.style.backgroundColor = '#d0d7de');
+
+            // Animation Loop
+            steps.forEach(s => {
+                const id = setTimeout(() => {
+                    // Critical Safety Check inside each timeout
+                    const currentLogsArea = document.getElementById('runner-logs');
+                    if (!currentLogsArea) return;
+
+                    // Log
+                    currentLogsArea.innerHTML += `<div class="text-gray-300 font-mono mb-1">> ${s.log}</div>`;
+                    currentLogsArea.scrollTop = currentLogsArea.scrollHeight;
+
+                    // Visual Node Update
+                    if(s.node) {
+                        const nodeEl = document.getElementById(s.node);
+                        if (nodeEl) { // Check existence before accessing properties
+                            // Make active
+                            nodeEl.classList.remove('bg-white', 'text-gray-500', 'border-gray-300');
+                            nodeEl.classList.add('running');
+                            
+                            // Previous nodes complete
+                            if(s.node === 'node-2') markComplete('node-1', 'line-1');
+                            if(s.node === 'node-3') markComplete('node-2', 'line-2');
+                            if(s.node === 'node-4') markComplete('node-3', 'line-3');
+                        }
+                    }
+                }, s.delay);
+                simulationTimeouts.push(id);
+            });
+
+            // Final State
+            const finalId = setTimeout(() => {
+                // Safety check before final update
+                const currentLogsArea = document.getElementById('runner-logs');
+                if (!currentLogsArea) return;
+
+                markComplete('node-4', null);
+                currentLogsArea.innerHTML += `<div class="text-green-400 font-bold mt-2">Done!</div>`;
+                if(finishBtn) finishBtn.classList.remove('hidden');
+            }, 9000);
+            simulationTimeouts.push(finalId);
+        }
+
+        function markComplete(nodeId, lineId) {
+            const n = document.getElementById(nodeId);
+            if (n) { // Check existence
+                n.classList.remove('running', 'bg-white', 'text-gray-500', 'border-gray-300');
+                n.classList.add('completed');
+            }
+            
+            if(lineId) {
+                const line = document.getElementById(lineId);
+                if (line) { // Check existence
+                    line.style.backgroundColor = '#2ea44f';
+                }
+            }
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            loadStep(0);
+        };
+
+    </script>
+</body>
+</html>
