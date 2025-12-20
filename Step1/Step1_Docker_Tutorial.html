@@ -80,7 +80,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-hidden">
+<body class="min-h-screen flex flex-col">
 
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 z-10 flex-none">
@@ -105,32 +105,32 @@
     </header>
 
     <!-- Main Workspace -->
-    <div class="flex-grow flex flex-col-reverse md:flex-row overflow-hidden max-w-7xl mx-auto w-full">
+    <div class="flex-grow flex flex-col-reverse md:flex-row md:overflow-hidden max-w-7xl mx-auto w-full">
         
         <!-- Sidebar Navigation -->
-        <nav class="w-full md:w-64 bg-white border-t md:border-t-0 md:border-r border-slate-200 flex-none overflow-y-auto md:overflow-y-auto z-10 max-h-32 md:max-h-none">
-            <div class="p-2 md:p-4 space-y-1 grid grid-cols-3 md:grid-cols-1 gap-1 md:gap-0 md:space-y-1">
-                <button onclick="loadStep(0)" class="step-btn w-full text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base" id="btn-step-0">
+        <nav class="w-full md:w-64 bg-white border-t md:border-t-0 md:border-r border-slate-200 flex-none overflow-y-auto z-10">
+            <div class="p-2 md:p-4 space-y-1 flex flex-wrap md:flex-col md:space-y-1 gap-1 md:gap-0">
+                <button onclick="loadStep(0)" class="step-btn text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base flex-1 md:flex-none md:w-full min-w-[80px]" id="btn-step-0">
                     <span class="md:inline">1. 準備</span>
                     <span class="text-xs bg-slate-100 px-1 md:px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Ready</span>
                 </button>
-                <button onclick="loadStep(1)" class="step-btn w-full text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base" id="btn-step-1">
+                <button onclick="loadStep(1)" class="step-btn text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base flex-1 md:flex-none md:w-full min-w-[80px]" id="btn-step-1">
                     <span class="md:inline">2. ファイル</span>
                     <span class="text-xs bg-slate-100 px-1 md:px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Edit</span>
                 </button>
-                <button onclick="loadStep(2)" class="step-btn w-full text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base" id="btn-step-2">
+                <button onclick="loadStep(2)" class="step-btn text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base flex-1 md:flex-none md:w-full min-w-[80px]" id="btn-step-2">
                     <span class="md:inline">3. コマンド</span>
                     <span class="text-xs bg-slate-100 px-1 md:px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Term</span>
                 </button>
-                <button onclick="loadStep(3)" class="step-btn w-full text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base" id="btn-step-3">
+                <button onclick="loadStep(3)" class="step-btn text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base flex-1 md:flex-none md:w-full min-w-[80px]" id="btn-step-3">
                     <span class="md:inline">4. 確認</span>
                     <span class="text-xs bg-slate-100 px-1 md:px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Web</span>
                 </button>
-                <button onclick="loadStep(4)" class="step-btn w-full text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base" id="btn-step-4">
+                <button onclick="loadStep(4)" class="step-btn text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base flex-1 md:flex-none md:w-full min-w-[80px]" id="btn-step-4">
                     <span class="md:inline">5. 更新</span>
                     <span class="text-xs bg-slate-100 px-1 md:px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Cycle</span>
                 </button>
-                <button onclick="loadStep(5)" class="step-btn w-full text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base" id="btn-step-5">
+                <button onclick="loadStep(5)" class="step-btn text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between text-xs md:text-base flex-1 md:flex-none md:w-full min-w-[80px]" id="btn-step-5">
                     <span class="md:inline">6. 片付け</span>
                     <span class="text-xs bg-slate-100 px-1 md:px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Clean</span>
                 </button>
@@ -145,7 +145,7 @@
         </nav>
 
         <!-- Content Area -->
-        <main class="flex-grow bg-slate-50 overflow-y-auto p-3 sm:p-4 md:p-8 relative pb-4" id="main-content">
+        <main class="flex-grow bg-slate-50 p-3 sm:p-4 md:p-8 relative pb-4 md:overflow-y-auto" id="main-content">
             <!-- Dynamic Content injected here -->
         </main>
 
@@ -200,6 +200,17 @@
                                     <p class="text-sm text-yellow-700">
                                         まだインストールしていない場合は、公式サイトからDocker Desktopをダウンロードしてインストールしてください。
                                     </p>
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <a href="https://www.docker.com/products/docker-desktop/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold py-1.5 px-3 rounded transition-colors">
+                                            <span class="mr-1">🐳</span> Docker Desktop (公式)
+                                        </a>
+                                        <a href="https://docs.docker.com/desktop/install/windows-install/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-xs bg-slate-600 hover:bg-slate-700 text-white font-semibold py-1.5 px-3 rounded transition-colors">
+                                            Windows版
+                                        </a>
+                                        <a href="https://docs.docker.com/desktop/install/mac-install/" target="_blank" rel="noopener noreferrer" class="inline-flex items-center text-xs bg-slate-600 hover:bg-slate-700 text-white font-semibold py-1.5 px-3 rounded transition-colors">
+                                            Mac版
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -234,6 +245,7 @@
                                 </div>
                                 <div class="p-2 md:p-4 overflow-auto flex-grow font-mono text-xs md:text-sm text-gray-300 relative group">
                                     <button onclick="copyCode()" class="absolute top-4 right-4 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+                                    <button onclick="downloadFile()" class="absolute top-4 right-20 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Download</button>
                                     <pre id="code-display" class="language-html"></pre>
                                 </div>
                             </div>
@@ -609,6 +621,21 @@ COPY ./index.html /usr/share/nginx/html/index.html`
             const code = document.getElementById('code-display').innerText;
             navigator.clipboard.writeText(code);
             alert("コードをコピーしました！");
+        }
+
+        function downloadFile() {
+            const code = document.getElementById('code-display').innerText;
+            const tabHtml = document.getElementById('tab-html');
+            const isHtmlTab = tabHtml.classList.contains('bg-gray-800');
+            
+            const filename = isHtmlTab ? 'index.html' : 'Dockerfile';
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(code));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
         }
 
         function initLayerChart() {

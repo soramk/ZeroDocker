@@ -89,7 +89,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-hidden">
+<body class="min-h-screen flex flex-col">
 
     <!-- Header -->
     <header class="bg-white border-b border-slate-200 z-10 flex-none">
@@ -114,11 +114,11 @@
     </header>
 
     <!-- Main Workspace -->
-    <div class="flex-grow flex flex-col-reverse md:flex-row overflow-hidden max-w-7xl mx-auto w-full">
+    <div class="flex-grow flex flex-col-reverse md:flex-row md:overflow-hidden max-w-7xl mx-auto w-full">
         
         <!-- Sidebar Navigation -->
         <nav class="w-full md:w-64 bg-white border-t md:border-t-0 md:border-r border-slate-200 flex-none overflow-y-auto z-0">
-            <div class="p-2 md:p-4 grid grid-cols-3 md:grid-cols-1 gap-1 md:space-y-1">
+            <div class="p-2 md:p-4 flex flex-wrap md:flex-col gap-1 md:space-y-1">
                 <button onclick="loadStep(0)" class="step-btn w-full text-center md:text-left px-2 md:px-4 py-2 md:py-3 rounded hover:bg-slate-50 transition-colors font-medium text-slate-600 flex flex-col md:flex-row items-center md:justify-between" id="btn-step-0">
                     <span class="text-xs md:text-base"><span class="md:hidden">概要</span><span class="hidden md:inline">1. コンセプト</span></span>
                     <span class="text-xs bg-slate-100 px-2 py-0.5 rounded text-slate-400 mt-1 md:mt-0">Intro</span>
@@ -154,7 +154,7 @@
         </nav>
 
         <!-- Content Area -->
-        <main class="flex-grow bg-slate-50 overflow-y-auto p-3 sm:p-4 md:p-8 relative" id="main-content">
+        <main class="flex-grow bg-slate-50 p-3 sm:p-4 md:p-8 relative pb-4 md:overflow-y-auto" id="main-content">
             <!-- Dynamic Content injected here -->
         </main>
 
@@ -242,6 +242,7 @@
                                 </div>
                                 <div class="p-2 md:p-4 overflow-auto flex-grow font-mono text-xs md:text-sm text-gray-300 relative group">
                                     <button onclick="copyCode()" class="absolute top-2 right-2 md:top-4 md:right-4 bg-gray-700 hover:bg-gray-600 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Copy</button>
+                                    <button onclick="downloadFile()" class="absolute top-2 right-20 md:top-4 md:right-20 bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity">Download</button>
                                     <pre id="code-display" class="language-yaml"></pre>
                                 </div>
                             </div>
@@ -549,6 +550,17 @@ jobs:
         function copyCode() {
             navigator.clipboard.writeText(codeSnippet);
             alert("設定をクリップボードにコピーしました！");
+        }
+
+        function downloadFile() {
+            const filename = 'ci.yml';
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(codeSnippet));
+            element.setAttribute('download', filename);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
         }
 
         function simulatePush() {
