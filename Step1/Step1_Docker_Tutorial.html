@@ -285,6 +285,29 @@
                             <p class="text-slate-600 mt-2">作成したファイルを元に、実際にコンテナを起動します。以下のシミュレーターで体験してみましょう。</p>
                         </div>
 
+                        <!-- Open Terminal Tips (Windows) -->
+                        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-bold text-lg text-slate-800 mb-2">ターミナルの開き方（Windows／コマンド）</h3>
+                            <p class="text-sm text-slate-600 mb-3">コマンドで新しくターミナル（シェル）を起動する方法です。</p>
+                            <div class="space-y-2">
+                                <div>
+                                    <p class="text-xs text-slate-500 mb-1">PowerShell を起動</p>
+                                    <code class="block bg-slate-100 p-2 rounded text-xs select-all">start powershell</code>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 mb-1">コマンドプロンプト を起動</p>
+                                    <code class="block bg-slate-100 p-2 rounded text-xs select-all">start cmd</code>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 mb-1">Windows Terminal を起動（インストール済みの場合）</p>
+                                    <code class="block bg-slate-100 p-2 rounded text-xs select-all">wt</code>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-2">
+                                    エクスプローラーで目的のフォルダを開き、アドレスバーに「powershell」と入力して Enter でも、そのフォルダ位置でターミナルを開けます。
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Terminal Simulator -->
                         <div class="bg-gray-900 rounded-lg shadow-2xl p-1 border border-gray-700 font-mono text-xs md:text-sm text-gray-300">
                             <div class="flex items-center px-2 md:px-4 py-2 bg-gray-800 rounded-t border-b border-gray-700 mb-2">
@@ -324,7 +347,7 @@
                         </div>
                     </div>
                 `,
-                hint: "「docker build」でイメージ作成、「docker run」で起動。この2段階プロセスが基本です。"
+                hint: "まずターミナルを開きましょう（例: 'start powershell'）。次に『docker build』でイメージ作成、『docker run』で起動という2段階が基本です。"
             },
             {
                 id: "verify",
